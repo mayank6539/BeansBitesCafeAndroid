@@ -1,0 +1,42 @@
+```yaml
+name: Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Android project
+        run: |
+          unzip -q BeansBites_Phone_Cloud_Build.zip -d extracted
+          cd extracted
+          PROJECT_DIR=$(find . -name gradlew -type f -print -quit)
+          echo "PROJECT_DIR=$(dirname "$PROJECT_DIR")" >> "$GITHUB_ENV"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Make Gradle executable
+        run: chmod +x "extracted/$PROJECT_DIR/gradlew"
+
+      - name: Build APK
+        working-directory: extracted/${{ env.PROJECT_DIR }}
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Beans-Bites-POS-APK
+          path: extracted/${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
+```
